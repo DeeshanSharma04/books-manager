@@ -4,11 +4,14 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const USER = require('../models/user');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
+let transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
-    user: process.env.USERNAME,
-    pass: process.env.PASSWORD,
+    user: 'demoacount1607@gmail.com',
+    pass: 'bksweggmsmzseadh',
   },
 });
 
@@ -156,7 +159,7 @@ const forgotPassword = async (req, res) => {
       return res.json({
         success: true,
         message:
-          'Password change request successfull. Please check your mail and follow further steps.',
+          'Password change request successful. Please check your mail and follow further steps.',
       });
     });
   } catch (err) {
@@ -168,7 +171,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-const resetPassword = async (req, res) => {
+const resetPassword = (req, res) => {
   jwt.verify(
     req.params.token,
     process.env.PASSWORD_RESET_TOKEN,
@@ -185,10 +188,15 @@ const resetPassword = async (req, res) => {
         });
         if (user) {
           const { newPassword, confirmNewPassword } = req.body;
-          if (newPassword === confirmNewPassword) {
+          if (newPassword == confirmNewPassword) {
             if (newPassword.length > 8 && newPassword.length < 16) {
               user.password = await bcrypt.hash(newPassword, 10);
+              user.resetPasswordToken = '';
               await user.save();
+              return res.json({
+                success: true,
+                message: 'Password reset successful',
+              });
             } else {
               return res.status(400).json({
                 success: false,
@@ -201,9 +209,18 @@ const resetPassword = async (req, res) => {
               error: 'New password and confirm new password does not match',
             });
           }
+        } else {
+          return res
+            .status(404)
+            .json({ success: false, error: 'No user found with this token' });
         }
       } catch (err) {
-        return;
+        return res
+          .status(400)
+          .json({
+            success: false,
+            error: 'Something went wrong. Please try again.',
+          });
       }
     }
   );

@@ -6,7 +6,7 @@ router.post('/signup', controller.signUp);
 
 router.post('/login', controller.login);
 
-router.get('/profile', controller.profile);
+router.get('/profile/:id', controller.profile);
 
 router.delete('/delete/:id', middleware.userAuth, controller.deleteUser);
 

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const BOOKS = require('../models/books');
+const USER = require('../models/user');
 
 const getAll = async (req, res) => {
   try {
@@ -70,11 +71,42 @@ const deleteBook = async (req, res) => {
 
 const deleteAll = async (req, res) => {
   try {
-    await BOOKS.deleteMany();
-    return res.json({
-      success: true,
-      message: 'All the records have been deleted successfully.',
-    });
+    await jwt.verify(
+      req.headers.usertoken,
+      process.env.SECRET_ACCESS_TOKEN,
+      async (err, { userID }) => {
+        if (err) {
+          return res.status(401).json({
+            success: false,
+            error: 'Authentication error. Session expired login again',
+          });
+        }
+        try {
+          const user = await USER.findById(userID);
+          if (user.role === 'admin') res.locals.isAdmin = true;
+          else res.locals.isAdmin = false;
+        } catch (err) {
+          return res.status(404).json({
+            success: false,
+            error:
+              'You are not registered. Please register here: http://localhost:5000/user/signup',
+          });
+        }
+      }
+    );
+    if (res.locals.isAdmin) {
+      await BOOKS.deleteMany();
+      return res.json({
+        success: true,
+        message: 'All the records have been deleted successfully.',
+      });
+    } else {
+      return res.status(401).json({
+        success: false,
+        error:
+          'Authorization error. You are not authorized to perform this action,',
+      });
+    }
   } catch (err) {
     return res.status(400).json({
       success: false,

@@ -20,6 +20,11 @@ const bookSchema = new mongoose.Schema({
   token: {
     type: String,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+    enum: [true, false],
+  },
 });
 
 module.exports = mongoose.model('Book', bookSchema);

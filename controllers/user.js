@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const USER = require('../models/user');
+const BOOKS = require('../models/books');
 
 let transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -122,10 +123,26 @@ const profile = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     if (res.locals.isAuthenticated) {
+      const user = res.locals.user;
+      const books = await BOOKS.find({ authorID: user._id });
+      if (books.length !== 0) {
+        books.forEach(async (book) => {
+          book.isDeleted = true;
+          try {
+            await book.save();
+          } catch (err) {
+            return res.status(401).json({
+              success: false,
+              error: 'Something went wrong. Please try again.',
+            });
+          }
+        });
+      }
       await USER.findByIdAndDelete(req.params.id);
       res.json({ success: true, message: 'User deleted successfully' });
     }
   } catch (err) {
+    console.log(err);
     return res.status(400).json({
       success: false,
       error: 'Something went wrong. Please try again',
@@ -215,12 +232,10 @@ const resetPassword = (req, res) => {
             .json({ success: false, error: 'No user found with this token' });
         }
       } catch (err) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: 'Something went wrong. Please try again.',
-          });
+        return res.status(400).json({
+          success: false,
+          error: 'Something went wrong. Please try again.',
+        });
       }
     }
   );

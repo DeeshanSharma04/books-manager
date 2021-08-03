@@ -5,7 +5,7 @@ const USER = require('../models/user');
 
 const getAll = async (req, res) => {
   try {
-    const books = await BOOKS.find();
+    const books = await BOOKS.find({ isDeleted: 'false' });
     return res.json({ success: true, books });
   } catch (err) {
     return res.status(400).json({
@@ -18,7 +18,9 @@ const getAll = async (req, res) => {
 const getOne = async (req, res) => {
   try {
     const book = await BOOKS.findById(req.params.id);
-    return res.json(book);
+    if (!book.isDeleted) {
+      return res.json(book);
+    } else throw new Error('Book not found');
   } catch (err) {
     return res.status(404).json({ success: false, error: 'Book not found' });
   }

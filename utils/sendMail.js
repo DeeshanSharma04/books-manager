@@ -22,16 +22,12 @@ const sendMail = (userEmail, resetPasswordToken, res) => {
   transporter.sendMail(mailOptions, (err) => {
     if (err) {
       console.log(err);
-      return res.status(400).json({
-        success: false,
-        error: 'Something went wrong. Please try again.',
-      });
+      throw new ErrorHandler(400, 'Something went wrong. Please try again.');
     }
-    return res.json({
-      success: true,
-      message:
-        'Password change request successful. Please check your mail and follow further steps.',
-    });
+    return new SuccessHandler(
+      res,
+      'Password change request successful. Please check your mail and follow further steps.'
+    );
   });
 };
 

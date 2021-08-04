@@ -1,20 +1,9 @@
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const USER = require('../models/user');
 const BOOKS = require('../models/books');
-
-let transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: 'demoacount1607@gmail.com',
-    pass: 'bksweggmsmzseadh',
-  },
-});
+const sendMail = require('../utils/sendMail');
 
 const signUp = async (req, res) => {
   try {
@@ -159,26 +148,7 @@ const forgotPassword = async (req, res) => {
       { expiresIn: '10m' }
     );
     await USER.findByIdAndUpdate(user._id, { resetPasswordToken });
-    const mailOptions = {
-      from: process.env.USERNAME,
-      to: user.email,
-      subject: 'Password reset link',
-      html: `<h1>Password reset link</h1><p>Link will expire in 10 minutes. To reset you password <a href="http://localhost:5000/user/reset-password/${resetPasswordToken}">Click here</a></p>`,
-    };
-    transporter.sendMail(mailOptions, (err) => {
-      if (err) {
-        console.log(err);
-        return res.status(400).json({
-          success: false,
-          error: 'Something went wrong. Please try again.',
-        });
-      }
-      return res.json({
-        success: true,
-        message:
-          'Password change request successful. Please check your mail and follow further steps.',
-      });
-    });
+    sendMail(user.email, resetPasswordToken, res);
   } catch (err) {
     console.log(err);
     return res.status(400).json({

@@ -15,6 +15,8 @@ router.delete(
   wrapper(controller.deleteUser)
 );
 
+router.put('/logout', wrapper(controller.logout));
+
 router.put('/forgot-password', wrapper(controller.forgotPassword));
 
 router.put('/reset-password/:token', wrapper(controller.resetPassword));

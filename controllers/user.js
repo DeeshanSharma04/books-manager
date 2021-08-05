@@ -106,6 +106,17 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    const user = await USER.findOne({ email: req.body.email });
+    user.token = [];
+    await user.save();
+    new SuccessHandler(res, 'You are logged out.');
+  } catch (err) {
+    throw new ErrorHandler(400, 'Something went wrong. Please try again.');
+  }
+};
+
 const forgotPassword = async (req, res) => {
   try {
     const user = await USER.findOne({ email: req.body.email });
@@ -171,6 +182,7 @@ module.exports = {
   login,
   profile,
   deleteUser,
+  logout,
   forgotPassword,
   resetPassword,
 };

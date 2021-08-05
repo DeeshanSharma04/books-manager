@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const USER = require('../models/user');
 const BOOKS = require('../models/books');
 const sendMail = require('../utils/sendMail');
+const { ErrorHandler, SuccessHandler } = require('../utils/globalHandler');
 
 const signUp = async (req, res) => {
   try {
@@ -21,24 +22,15 @@ const signUp = async (req, res) => {
           })
         );
         await user.save();
-        return res.json({
-          success: true,
-          message: 'User created successfully',
-          user,
-        });
+        return new SuccessHandler(res, 'User created successfully', user);
       }
     } else
-      return res.status(403).json({
-        success: false,
-        error:
-          'You are already signed up. Please login here: http://localhost:5000/user/login',
-      });
+      throw new ErrorHandler(
+        403,
+        'You are already signed up. Please login here: http://localhost:5000/user/login'
+      );
   } catch (err) {
-    console.log(err);
-    return res.status(400).json({
-      success: false,
-      error: 'Something went wrong. Please try again',
-    });
+    throw new ErrorHandler(400, 'Something went wrong. Please try again');
   }
 };
 
@@ -64,48 +56,34 @@ const login = async (req, res) => {
                 )
               );
               await user.save();
-              return res.json({
-                success: true,
-                message: `Welcome ${user.name}`,
-                user,
-              });
+              return new SuccessHandler(res, `Welcome ${user.name}`, user);
             }
-            return res.json({
-              success: true,
-              message: `Welcome ${user.name}`,
-              user,
-            });
+            return new SuccessHandler(res, `Welcome ${user.name}`, user);
           } catch (err) {
-            return res.status(400).json({
-              success: false,
-              error: 'Something went wrong. Please try again.',
-            });
+            throw new ErrorHandler(
+              400,
+              'Something went wrong. Please try again'
+            );
           }
         }
       );
     } else {
-      return res
-        .status(401)
-        .json({ success: false, error: 'Incorrect password' });
+      throw new ErrorHandler(401, 'Incorrect password');
     }
   } catch (err) {
-    return res.status(404).json({
-      success: false,
-      error:
-        'You are not registered. Please sign up here: http://localhost:5000/user/signup',
-    });
+    throw new ErrorHandler(
+      404,
+      'You are not registered. Please sign up here: http://localhost:5000/user/signup'
+    );
   }
 };
 
 const profile = async (req, res) => {
   try {
     const user = await USER.findById(req.params.id);
-    return res.json({ success: true, user });
+    return new SuccessHandler(res, `Welcome ${user.name}`, user);
   } catch (err) {
-    return res.status(400).json({
-      success: false,
-      error: 'Something went wrong. Please try again.',
-    });
+    throw new ErrorHandler(400, 'Something went wrong. Please try again');
   }
 };
 
@@ -117,25 +95,14 @@ const deleteUser = async (req, res) => {
       if (books.length !== 0) {
         books.forEach(async (book) => {
           book.isDeleted = true;
-          try {
-            await book.save();
-          } catch (err) {
-            return res.status(401).json({
-              success: false,
-              error: 'Something went wrong. Please try again.',
-            });
-          }
+          await book.save();
         });
       }
       await USER.findByIdAndDelete(req.params.id);
-      res.json({ success: true, message: 'User deleted successfully' });
+      new SuccessHandler(res, 'User deleted successfully');
     }
   } catch (err) {
-    console.log(err);
-    return res.status(400).json({
-      success: false,
-      error: 'Something went wrong. Please try again',
-    });
+    throw new ErrorHandler(400, 'Something went wrong. Please try again');
   }
 };
 
@@ -150,11 +117,7 @@ const forgotPassword = async (req, res) => {
     await USER.findByIdAndUpdate(user._id, { resetPasswordToken });
     sendMail(user.email, resetPasswordToken, res);
   } catch (err) {
-    console.log(err);
-    return res.status(400).json({
-      success: false,
-      error: 'Something went wrong. Please try again later.',
-    });
+    throw new ErrorHandler(400, 'Something went wrong. Please try again');
   }
 };
 
@@ -164,10 +127,10 @@ const resetPassword = (req, res) => {
     process.env.PASSWORD_RESET_TOKEN,
     async (err) => {
       if (err) {
-        return res.status(401).json({
-          success: false,
-          error: 'Authentication error. Invalid token or token expired',
-        });
+        throw new ErrorHandler(
+          401,
+          'Authentication error. Invalid token or token expired'
+        );
       }
       try {
         const user = await USER.findOne({
@@ -180,32 +143,24 @@ const resetPassword = (req, res) => {
               user.password = await bcrypt.hash(newPassword, 10);
               user.resetPasswordToken = '';
               await user.save();
-              return res.json({
-                success: true,
-                message: 'Password reset successful',
-              });
+              new SuccessHandler(res, 'Password reset successful');
             } else {
-              return res.status(400).json({
-                success: false,
-                error: 'Password length must be between 8 to 16',
-              });
+              throw new ErrorHandler(
+                400,
+                'Something went wrong. Please try again'
+              );
             }
           } else {
-            return res.status(400).json({
-              success: false,
-              error: 'New password and confirm new password does not match',
-            });
+            throw new ErrorHandler(
+              400,
+              'New password and confirm new password does not match'
+            );
           }
         } else {
-          return res
-            .status(404)
-            .json({ success: false, error: 'No user found with this token' });
+          throw new ErrorHandler(404, 'No user found with this token');
         }
       } catch (err) {
-        return res.status(400).json({
-          success: false,
-          error: 'Something went wrong. Please try again.',
-        });
+        throw new ErrorHandler(400, 'Something went wrong. Please try again');
       }
     }
   );

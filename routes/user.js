@@ -1,17 +1,22 @@
 const router = require('express').Router();
 const controller = require('../controllers/user');
 const middleware = require('../middleware/auth');
+const { wrapper } = require('../utils/globalHandler');
 
-router.post('/signup', controller.signUp);
+router.post('/signup', wrapper(controller.signUp));
 
-router.post('/login', controller.login);
+router.post('/login', wrapper(controller.login));
 
-router.get('/profile/:id', controller.profile);
+router.get('/profile/:id', wrapper(controller.profile));
 
-router.delete('/delete/:id', middleware.userAuth, controller.deleteUser);
+router.delete(
+  '/delete/:id',
+  wrapper(middleware.userAuth),
+  wrapper(controller.deleteUser)
+);
 
-router.put('/forgot-password', controller.forgotPassword);
+router.put('/forgot-password', wrapper(controller.forgotPassword));
 
-router.put('/reset-password/:token', controller.resetPassword);
+router.put('/reset-password/:token', wrapper(controller.resetPassword));
 
 module.exports = router;
